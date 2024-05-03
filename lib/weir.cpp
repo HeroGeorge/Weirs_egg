@@ -25,7 +25,7 @@ void weir::draw(N5110 &lcd, bool sleeping) {
 
 void weir::update(UserInput input) {
     //printf("weir: Update\n");
-    _speed = 4;
+    _speed = 7;
     // update y value depending on direction of movement
     // North is decrement as origin is at the top-left so decreasing moves up
     if (input.d == W) { 
