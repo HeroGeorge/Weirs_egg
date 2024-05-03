@@ -1,1 +1,2 @@
-Project simulation a game that runs similiar to a Tomagotchi game popular as a child.
+Project simulation.
+A game that runs similar to a Tamagotchi game(Egg Pet game popular in childhood).
