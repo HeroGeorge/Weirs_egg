@@ -51,14 +51,12 @@ void sleep_sr();
 
 
 ///////////// defines ///////////////////// 
-const int start_tone[] = {NOTE_G4, NOTE_A4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_D4, NOTE_E4, NOTE_C5}; //create array with the required notes (in order)
+const int start_tone[] = {NOTE_G4, NOTE_A4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_A4, NOTE_E4, NOTE_C5}; //create array with the required notes (in order)
 std::string selected_egg; //global variable to store selected egg 
 
 Thread music_thread;
 
 volatile bool sleep_flag = 0;
-volatile bool music_end = 0;
-int state = 0;
 
 Ticker hunger_loss;
 
@@ -103,8 +101,6 @@ int main() {
             life_led = 0;
         }
     }
-    music_end = 1;
-    music_thread.join();
     game_over();
 }
 
@@ -115,14 +111,13 @@ void play_note(int frequency){
 }
 
 void music(){
-    while(!music_end){
+    while (1) {
         for (int i = 0; i < 8; i++) {
             play_note(start_tone[i]);
-            thread_sleep_for(500);
         }   
     }
-    play_note(0);
 }
+
 
 void lose_hunger(){
     itr++;
