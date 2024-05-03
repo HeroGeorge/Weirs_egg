@@ -49,7 +49,6 @@ void hunger_led();
 void sleep_sr();
 
 
-
 ///////////// defines ///////////////////// 
 const int start_tone[] = {NOTE_G4, NOTE_A4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_A4, NOTE_E4, NOTE_C5}; //create array with the required notes (in order)
 std::string selected_egg; //global variable to store selected egg 
