@@ -49,6 +49,7 @@ void hunger_led();
 void sleep_sr();
 
 
+
 ///////////// defines ///////////////////// 
 const int start_tone[] = {NOTE_G4, NOTE_A4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_A4, NOTE_E4, NOTE_C5}; //create array with the required notes (in order)
 std::string selected_egg; //global variable to store selected egg 
@@ -72,15 +73,16 @@ int main() {
     hatch();
 
     render();    // first draw the initial frame 
-    int fps = 12;
+    int fps = 30;
     thread_sleep_for(1000/fps);  // and wait for one frame period - millseconds
     hunger_loss.attach(&lose_hunger, 1s);
 
     while (hunger > 0 && hunger < 21) {  // keep looping while hunger remains 0-20
+    printf("hunger = %d\n", hunger);
         sleep_event();
 
         if (!sleep_flag) {
-
+            buzzer.resume();
             lcd.setBrightness(0.45);
             lcd.setContrast(0.5);
             UserInput input = {joystick.get_direction(),joystick.get_mag()};
@@ -95,6 +97,7 @@ int main() {
         }   else {
             render();
             thread_sleep_for(1200);
+            buzzer.suspend();
             lcd.setBrightness(0);
             lcd.setContrast(0);
             life_led = 0;
@@ -120,7 +123,7 @@ void music(){
 
 void lose_hunger(){
     itr++;
-    if (itr % 8 == 0 && itr!= 0) {
+    if (itr % 3 == 0 && itr!= 0) {
         hunger--;
     }
 }
@@ -160,10 +163,10 @@ void feed_event(){
 
 void sleep_event(){
     if (buttonB.read() == 1){
+        thread_sleep_for(300);
         Weir.sleep_weir(!sleep_flag);
         sleep_flag = !sleep_flag;
     }
-            ThisThread::sleep_for(300ms);
 }
 void render() {  // clear screen, re-draw and refresh
     lcd.clear();  
@@ -184,8 +187,8 @@ void welcome() {
         if(buttonB.read() == 1){ 
             thread_sleep_for(100);
             help();
+            thread_sleep_for(1500);
             break;
-
         }
         else if (buttonA.read() == 1) { 
             thread_sleep_for(300);
@@ -285,7 +288,7 @@ std::string egg_select(){
 
 void game_over() { // splash screen 
     printf("\nGame Over Function Run\n");
-    music_thread.terminate();
+    buzzer.suspend();
     time_score = (itr);
     char buffer[14];
     sprintf(buffer, "    %d S    ", time_score);
@@ -322,6 +325,7 @@ void hatch(){
 }
 
 void help(){
+
     printf("\nHelp Function Run\n");
     lcd.clear();
     lcd.printString("How To Play",0,0);
@@ -329,7 +333,7 @@ void help(){
     lcd.printString("to make a new",0,3);
     lcd.printString("friend.",0,4);
     lcd.refresh();
-    ThisThread::sleep_for(5s);
+    thread_sleep_for(5000);
     lcd.clear();
     lcd.printString("Develope your",0,0);
     lcd.printString("egg by playing",0,1);
@@ -338,13 +342,15 @@ void help(){
     lcd.printString("COMPLETE",0,4);
     lcd.printString("as possible. ",0,5);
     lcd.refresh();
-    ThisThread::sleep_for(7s);
+    thread_sleep_for(5000);
     lcd.clear();
-    lcd.printString("Feed and make",0,0);
-    lcd.printString("sure to sleep",0,1);
+    lcd.printString("Feed(A) & make",0,0);
+    lcd.printString("Weir sleep(B)",0,1);
     lcd.printString("when neccesary.",0,2);
     lcd.printString("Have fun with ",0,3);
     lcd.printString("your friend",0,4);
     lcd.printString("and Good Luck.	",0,5);
     lcd.refresh();
+    thread_sleep_for(5000);
+    return;
 }
