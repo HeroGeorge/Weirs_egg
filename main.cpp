@@ -8,6 +8,7 @@
 #include "eggs.h"
 #include <cstdio>
 #include <cstdlib>
+#include <iterator>
 #include <map>
 #include <string>
 #include <iostream>
@@ -42,56 +43,68 @@ void help();
 void hatch();
 void music();
 void feed_event();
+void sleep_event();
 void lose_hunger();
-void hunger_tick();
+void hunger_led();
+void sleep_sr();
+
 
 
 ///////////// defines ///////////////////// 
 const int start_tone[] = {NOTE_G4, NOTE_A4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_D4, NOTE_E4, NOTE_C5}; //create array with the required notes (in order)
 std::string selected_egg; //global variable to store selected egg 
+
 Thread music_thread;
-int hunger = 10;
+
 volatile bool sleep_flag = 0;
+volatile bool music_end = 0;
 int state = 0;
+
 Ticker hunger_loss;
+
 int time_score;
 int itr = 0;
+int hunger = 10;
+
 
 int main() {
     music_thread.start(music);
     init();      // initialise devices and objects
-    //welcome();
+    welcome();
     selected_egg = egg_select(); 
-    //hatch();
+    hatch();
 
     render();    // first draw the initial frame 
-    int fps = 7;
+    int fps = 12;
     thread_sleep_for(1000/fps);  // and wait for one frame period - millseconds
-    hunger_loss.attach(&lose_hunger, 12s);
+    hunger_loss.attach(&lose_hunger, 1s);
 
-    while (hunger > 0 && hunger < 21) {  // keep looping while lives remain
-        // read the joystick input and store in a struct
-        printf("hunger = %d\n",hunger);
+    while (hunger > 0 && hunger < 21) {  // keep looping while hunger remains 0-20
+        sleep_event();
 
-        /*if (buttonB == 1 && sleep_flag == 0){
-            printf("Button - \n");
-            sleep_flag = 1;
-        }*/
+        if (!sleep_flag) {
 
-        if (hunger <= 3 || hunger >= 18) {
-            life_led = 0b01; //red flash
-            thread_sleep_for(300);      
-            life_led = 0b00;
-        } else {
-            life_led = 0b10;
+            lcd.setBrightness(0.45);
+            lcd.setContrast(0.5);
+            UserInput input = {joystick.get_direction(),joystick.get_mag()};
+            hunger = Weir.update(input, hunger);   // update the game engine based on input    
+            feed_event();
+            render();
+            thread_sleep_for(1000/fps);
+
+                if (hunger <= 3 || hunger >= 18)life_led = 0b01; //red flash taken out as it slowed down the thread significantly
+                else life_led = 0b10;
+
+        }   else {
+            render();
+            thread_sleep_for(1200);
+            lcd.setBrightness(0);
+            lcd.setContrast(0);
+            life_led = 0;
         }
-
-        UserInput input = {joystick.get_direction(),joystick.get_mag()};
-        hunger = Weir.update(input, hunger);   // update the game engine based on input    
-        feed_event();
-        render();
-        thread_sleep_for(1000/fps);
     }
+    music_end = 1;
+    music_thread.join();
     game_over();
 }
 
@@ -102,17 +115,20 @@ void play_note(int frequency){
 }
 
 void music(){
-    for(int j = 0; j >= 0; j++){
+    while(!music_end){
         for (int i = 0; i < 8; i++) {
             play_note(start_tone[i]);
             thread_sleep_for(500);
         }   
     }
+    play_note(0);
 }
 
 void lose_hunger(){
-    hunger--;
     itr++;
+    if (itr % 8 == 0 && itr!= 0) {
+        hunger--;
+    }
 }
 
 
@@ -144,7 +160,16 @@ void init() {
 void feed_event(){
     if (buttonA.read() == 1) {
         Weir.feed_weir(1);
+        thread_sleep_for(300);
     }
+}
+
+void sleep_event(){
+    if (buttonB.read() == 1){
+        Weir.sleep_weir(!sleep_flag);
+        sleep_flag = !sleep_flag;
+    }
+            ThisThread::sleep_for(300ms);
 }
 void render() {  // clear screen, re-draw and refresh
     lcd.clear();  
@@ -267,7 +292,7 @@ std::string egg_select(){
 void game_over() { // splash screen 
     printf("\nGame Over Function Run\n");
     music_thread.terminate();
-    time_score = (itr*12);
+    time_score = (itr);
     char buffer[14];
     sprintf(buffer, "    %d S    ", time_score);
     while (1) {
